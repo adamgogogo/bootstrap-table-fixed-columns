@@ -1,27 +1,49 @@
-.fixed-table-header-columns,
-.fixed-table-body-columns {
+.left-fixed-table-columns,
+.left-fixed-body-columns {
     position: absolute;
     background-color: #fff;
     display: none;
     box-sizing: border-box;
     overflow: hidden;
+    /* -webkit-box-shadow: 0 0 6px rgba(0, 0, 0, .12);
+    box-shadow: 0 0 6px rgba(0, 0, 0, .12); */
 }
 
-.fixed-table-header-columns .table,
-.fixed-table-body-columns .table {
+.fixed-table-body {
+    height: calc(100% + 0px);
+    overflow-x: overlay;
+}
+
+body .layui-layer-page .layui-layer-content .form-file {
+    padding-top: 4px;
+}
+
+.left-fixed-table-columns .table,
+.left-fixed-body-columns .table {
     border-right: 1px solid #ddd;
 }
 
-.fixed-table-header-columns .table.table-no-bordered,
-.fixed-table-body-columns .table.table-no-bordered {
+.left-fixed-table-columns .table.table-no-bordered,
+.left-fixed-body-columns .table.table-no-bordered {
     border-right: 1px solid transparent;
 }
 
-.fixed-table-body-columns table {
+.left-fixed-body-columns table {
     position: absolute;
     animation: none;
 }
 
-.bootstrap-table .table-hover > tbody > tr.hover > td{
+.bootstrap-table .table-hover>tbody>tr.hover>td {
     background-color: #f5f5f5;
+}
+
+.right-fixed-table-columns {
+    position: absolute;
+    right: 0px;
+    /*border-left:1px solid #ddd;*/
+    display: none;
+    z-index: 100;
+    border-width: 0 0 0 1px;
+    /* -webkit-box-shadow: 0 0 10px rgba(0, 0, 0, .12);
+    box-shadow: 0 0 10px rgba(0, 0, 0, .12); */
 }
