@@ -5,104 +5,238 @@
  *  - Sorting Problem solved
  *  - Recalculated Size of fixed Columns
  */
-
+/**
+ * J2eeFAST/adamgogogo 二次修改
+ */
 (function ($) {
-    'use strict';
+	'use strict';
 
     $.extend($.fn.bootstrapTable.defaults, {
         fixedColumns: false,
-        fixedNumber: 1
+        fixedNumber: 1,
+        rightFixedColumns: false,
+        rightFixedNumber: 1
     });
 
-    var BootstrapTable  = $.fn.bootstrapTable.Constructor,
-        _initHeader     = BootstrapTable.prototype.initHeader,
-        _initBody       = BootstrapTable.prototype.initBody,
-        _resetView      = BootstrapTable.prototype.resetView,
-        _getCaret       = BootstrapTable.prototype.getCaret;  // Add: Aleksej
+    var BootstrapTable = $.fn.bootstrapTable.Constructor,
+        _initHeader = BootstrapTable.prototype.initHeader,
+        _initBody = BootstrapTable.prototype.initBody,
+        _resetView = BootstrapTable.prototype.resetView;
 
     BootstrapTable.prototype.initFixedColumns = function () {
-        this.$fixedHeader = $([
-            '<div class="fixed-table-header-columns">',
-            '<table>',
-            '<thead></thead>',
-            '</table>',
-            '</div>'].join(''));
-
         this.timeoutHeaderColumns_ = 0;
-        this.$fixedHeader.find('table').attr('class', this.$el.attr('class'));
-        this.$fixedHeaderColumns = this.$fixedHeader.find('thead');
-        this.$tableHeader.before(this.$fixedHeader);
-
-        this.$fixedBody = $([
-            '<div class="fixed-table-body-columns">',
-            '<table>',
-            '<tbody></tbody>',
-            '</table>',
-            '</div>'].join(''));
-
         this.timeoutBodyColumns_ = 0;
-        this.$fixedBody.find('table').attr('class', this.$el.attr('class'));
-        this.$fixedBodyColumns = this.$fixedBody.find('tbody');
-        this.$tableBody.before(this.$fixedBody);
+
+        if(this.options.cardView){
+            if(this.options.fixedColumns){
+                if($("#"+this.options.id + "-left-fixed-table-columns")){
+                    $("#"+this.options.id + "-left-fixed-table-columns").hide();
+                }
+                if($("#"+this.options.id + "-left-fixed-body-columns")){
+                    $("#"+this.options.id + "-left-fixed-body-columns").hide();
+                }
+            }
+            if(this.options.rightFixedColumns){
+                if($("#"+this.options.id + "-right-fixed-table-columns")){
+                    $("#"+this.options.id + "-right-fixed-table-columns").hide();
+                }
+            }
+            return;
+        }
+        if (this.options.fixedColumns) {
+
+            var $leftFixedHeader = this.$tableContainer.find('.left-fixed-table-columns');
+            if(!$leftFixedHeader.length){
+                this.$fixedHeader = $([
+                    '<div id="'+this.options.id+'-left-fixed-table-columns" class="left-fixed-table-columns">',
+                    '<table>',
+                    '<thead></thead>',
+                    '</table>',
+                    '</div>'].join(''));
+
+                this.$fixedHeader.find('table').attr('class', this.$el.attr('class'));
+                this.$fixedHeaderColumns = this.$fixedHeader.find('thead');
+                this.$tableHeader.before(this.$fixedHeader);
+
+                this.$fixedBody = $([
+                    '<div id="'+this.options.id+'-left-fixed-body-columns" class="left-fixed-body-columns">',
+                    '<table>',
+                    '<tbody></tbody>',
+                    '</table>',
+                    '</div>'].join(''));
+
+                this.$fixedBody.find('table').attr('class', this.$el.attr('class'));
+                this.$fixedBodyColumns = this.$fixedBody.find('tbody');
+                this.$tableBody.before(this.$fixedBody);
+            }
+        }else{
+            $("#"+this.options.id + "-left-fixed-table-columns").show();
+            $("#"+this.options.id + "-left-fixed-body-columns").show();
+        }
+        if (this.options.rightFixedColumns) {
+            var $rightFixedHeader = this.$tableContainer.find('.right-fixed-table-columns');
+            if(!$rightFixedHeader.length){
+                this.$rightfixedBody = $([
+                    '<div id="'+this.options.id+'-right-fixed-table-columns" class="right-fixed-table-columns">',
+                    '<table>',
+                    '<thead></thead>',
+                    '<tbody style="background-color: #fff;"></tbody>',
+                    '</table>',
+                    '</div>'].join(''));
+                this.$rightfixedBody.find('table').attr('class', this.$el.attr('class'));
+                this.$rightfixedHeaderColumns = this.$rightfixedBody.find('thead');
+                this.$rightfixedBodyColumns = this.$rightfixedBody.find('tbody');
+                this.$tableBody.before(this.$rightfixedBody);
+                if (this.options.fixedColumns && this.options.rightFixedNumber) {
+					// $('.right-fixed-table-columns').attr('style', 'right:' + _w + 'px;');
+                }
+            }else{
+                $("#"+this.options.id + "-right-fixed-table-columns").show();
+            }
+        }
     };
 
     BootstrapTable.prototype.initHeader = function () {
+
         _initHeader.apply(this, Array.prototype.slice.apply(arguments));
 
-        if (!this.options.fixedColumns) {
+        if (!this.options.fixedColumns && !this.options.rightFixedColumns){
             return;
         }
 
-        this.initFixedColumns();
+		this.initFixedColumns();
+		
+		var existCondition = setInterval(() => {
+			var _w2 = document.querySelector('.right-fixed-table-columns > table').offsetWidth;
+			if (document.querySelector('.right-fixed-table-columns > table') && _w2) {
+				if (document.querySelectorAll('.right-fixed-table-columns > table> thead > tr > th').length) {
+					if (document.querySelector('.right-fixed-table-columns').style.right == _w2) clearInterval(existCondition);
+					document.querySelector('.right-fixed-table-columns > table > thead').style.backgroundColor = "#fff";
+					document.querySelector('.right-fixed-table-columns').style.right = _w2 + 'px';
+				}
+			} else {
+				clearInterval(existCondition);
+			}
+		}, 1000);
 
-        var that = this, $trs = this.$header.find('tr').clone(true); //Fix: Aleksej "clone()" mit "clone(true)" ersetzt
-        $trs.each(function () {
-            // This causes layout problems:
-            //$(this).find('th:gt(' + (that.options.fixedNumber -1) + ')').remove(); // Fix: Aleksej "-1" hinnzugef�gt. Denn immer eine Spalte Mehr geblieben ist
-            $(this).find('th:gt(' + that.options.fixedNumber + ')').remove();
-        });
-        this.$fixedHeaderColumns.html('').append($trs); 
+        if(this.options.cardView){
+            return;
+        }
+
+        var $ltr = this.$header.find('tr:eq(0)').clone(true),
+            that = this,
+            $rtr = this.$header.find('tr:eq(0)').clone(),
+            $thisRths = this.$header.find('tr:eq(0)').find('th'),
+            $lths = $ltr.clone(true).find('th'),
+            $rths = $rtr.clone().find('th');
+        $ltr.html('');
+        $rtr.html('');
+        //右边列冻结
+        if (this.options.rightFixedColumns) {
+            // var $trs = this.$header.find('tr').clone(true); //Fix: Aleksej "clone()" mit "clone(true)" ersetzt
+            // $trs.each(function () {
+            //     // This causes layout problems:
+            //     //$(this).find('th:gt(' + (that.options.fixedNumber -1) + ')').remove(); // Fix: Aleksej "-1" hinnzugefügt. Denn immer eine Spalte Mehr geblieben ist
+            //     $(this).find('th:gt(' + that.options.fixedNumber + ')').remove();
+            // });
+
+            for (var i = 0; i < this.options.rightFixedNumber; i++) {
+                $rtr.append($rths.eq($rths.length - this.options.rightFixedNumber + i).clone());
+                $thisRths.eq($rths.length - this.options.rightFixedNumber + i).children().each(function(){
+                    $(this).css("visibility" ,"hidden");
+                });
+            }
+            this.$rightfixedHeaderColumns.html('').append($rtr);
+        }
+
+        //左边列冻结
+        if (this.options.fixedColumns) { //left-fixed-table-columns
+            for (var i = 0; i < this.options.fixedNumber; i++) {
+                $ltr.append($lths.eq(i).clone(true));
+
+            }
+            this.$fixedHeaderColumns.html('').append($ltr);
+            this.$selectAll = $ltr.find('[name="btSelectAll"]');
+            this.$selectAll.on('click', function () {
+                var checked = $(this).prop('checked');
+                that.$fixedBodyColumns.find("input[name=btSelectItem]").filter(':enabled').prop('checked', checked);
+                that.$fixedBodyColumns.find("input[name=btSelectItem]").closest('tr')[checked ? 'addClass' : 'removeClass']('selected');
+            });
+        }
+
+
     };
 
     BootstrapTable.prototype.initBody = function () {
         _initBody.apply(this, Array.prototype.slice.apply(arguments));
 
-        if (!this.options.fixedColumns) {
+        if (!this.options.fixedColumns && !this.options.rightFixedColumns) {
             return;
         }
 
-        var that = this,
-            rowspan = 0;
+        if(this.options.cardView){
+            return;
+        }
 
-        this.$fixedBodyColumns.html('');
-        this.$body.find('> tr[data-index]').each(function () {
-            var $tr = $(this).clone(),
-                $tds = $tr.find('td');
-
-            var dataIndex = $tr.attr("data-index");
-            $tr = $("<tr></tr>");
-            $tr.attr("data-index", dataIndex);
-
-            var end = that.options.fixedNumber;
-            if (rowspan > 0) {
-                --end;
-                --rowspan;
-            }
-            for (var i = 0; i < end; i++) {
-                $tr.append($tds.eq(i).clone());
-            }
-            that.$fixedBodyColumns.append($tr);
-            
-            if ($tds.eq(0).attr('rowspan')){
-                rowspan = $tds.eq(0).attr('rowspan') - 1;
-            }
-        });
+        var that = this;
+        if (this.options.fixedColumns) {
+            //页面新增左侧表格内容
+            this.$fixedBodyColumns.html('');
+            this.$body.find('> tr[data-index]').each(function () {
+                var $tr = $(this).clone(true),
+                    $tds = $tr.clone(true).find('td');
+                $tr.html('');
+                for (var i = 0; i < that.options.fixedNumber; i++) {
+                    var $ftd = $tds.eq(i).clone(true);
+                    var $select = $ftd.find('input[name="btSelectItem"]');
+                    if($select.length){
+                        $ftd.css("width","36px").css("padding","8px 0");
+                    }
+                    $tr.append($ftd);
+                }
+                that.$fixedBodyColumns.append($tr);
+            });
+        }
+        if (this.options.rightFixedColumns) {
+            //页面新增右侧表格内容
+            this.$rightfixedBodyColumns.html('');
+            this.$body.find('> tr[data-index]').each(function () { //遍历行
+                var $thisTr = $(this);
+                var $tr = $(this).clone(), //当前行
+                    $tds = $tr.clone().find('td'), //列
+                    $thisTds =  $thisTr.find('td');
+                $tr.html('');
+                for (var i = 0; i < that.options.rightFixedNumber; i++) {
+                    var indexTd = $tds.length - that.options.rightFixedNumber + i;
+                    var oldTd = $tds.eq(indexTd);
+                    var fixTd = oldTd.clone();
+                    var buttons = fixTd.find('button');
+                    //事件转移：冻结列里面的事件转移到实际按钮的事件
+                    buttons.each(function (key, item) {
+                        $(item).click(function () {
+                            that.$body.find("tr[data-index=" + $tr.attr('data-index') + "] td:eq(" + indexTd + ") button:eq(" + key + ")").click();
+                        });
+                    });
+                    $tr.append(fixTd);
+                    $thisTds.eq(indexTd).children().each(function(){
+                        $(this).css("visibility" ,"hidden");
+                    });
+                }
+                that.$rightfixedBodyColumns.append($tr);
+            });
+        }
     };
 
     BootstrapTable.prototype.resetView = function () {
         _resetView.apply(this, Array.prototype.slice.apply(arguments));
 
-        if (!this.options.fixedColumns) {
+        if (!this.options.fixedColumns && !this.options.rightFixedColumns) {
+            return;
+        }
+
+        if(this.options.cardView){
+            // $("#"  + that.options.id).removeAttr("style");
+            // console.log("--->>"+$("#"  + that.options.id).attr("style"))
             return;
         }
 
@@ -117,126 +251,186 @@
         var that = this,
             visibleFields = this.getVisibleFields(),
             headerWidth = 0;
+        if (that.options.fixedColumns) {
+            this.$body.find('tr:first-child:not(.no-records-found) > *').each(function (i) {
+                var $this = $(this),
+                    index = i;
 
-        this.$body.find('tr:first-child:not(.no-records-found) > *').each(function (i) {
-            var $this = $(this),
-                index = i;
+                if (i >= that.options.fixedNumber) {
+                    return false;
+                }
 
-            if (i >= that.options.fixedNumber) {
-                return false;
-            }
-
-            if (that.options.detailView && !that.options.cardView) {
-                index = i - 1;
-            }
-
-            var $th = that.$fixedHeader.find('th[data-field="' + visibleFields[index] + '"]');
-            $th.find('.fht-cell').width($this.innerWidth());
-            headerWidth += $this.outerWidth();
-
-            $th.data('fix-pos', index);
-        });
-        this.$fixedHeader.width(headerWidth + 1).show();
-
-        // fix click event
-        this.$fixedHeader.delegate("tr th", 'click', function() {
-            $(this).parents(".fixed-table-container").find(".fixed-table-body table thead tr th:eq("+$(this).data("fix-pos")+") .sortable").click();
-        })
-    };
-
-    /**
-    * Add: Aleksej
-    * Hook f�r getCaret. Aktualisieren Header bei Fixed-Columns wenn diese sortiert wurden
-    * @method getCaret
-    * @for BootstrapTable
-    */
-    BootstrapTable.prototype.getCaret = function () {
-        var result = _getCaret.apply(this, arguments);
-
-        if (this.options.fixedColumns && this.$fixedHeaderColumns instanceof jQuery) {
-            var that = this, $th;
-
-            $.each(this.$fixedHeaderColumns.find('th'), function (i, th) {
-                $th = $(th);
-                $th.find('.sortable').removeClass('desc asc').addClass($th.data('field') === that.options.sortName ? that.options.sortOrder : 'both');
+                if (that.options.detailView && !that.options.cardView) {
+                    index = i - 1;
+                }
+                that.$fixedHeader.find('thead th[data-field="' + visibleFields[index] + '"]')
+                    .find('.fht-cell').width($this.innerWidth());
+                headerWidth += $this.outerWidth();
             });
+            this.$fixedHeader.width(headerWidth + 2).show();
         }
+        if (that.options.rightFixedColumns) {
+            headerWidth = 0;
+            var totalLength = $("#" + that.options.id).find('th').length;
+            this.$body.find('tr:first-child:not(.no-records-found) > *').each(function (i) {
+                var $this = $(this),
+                    index = totalLength - i - 1;
 
-     return result;
-    };
-
-    /**
-     * Add: Aleksej, zum berechnen von Scrollbar-Gr��e
-     * @method calcScrollBarSize
-     * @return Number
-     */
-    BootstrapTable.prototype.calcScrollBarSize = function () {
-        // Es ist egal, ob H�he oder Breite
-        var tmpWidth        = 100,
-            $container      = $('<div>').css({
-                width       : tmpWidth, 
-                overflow    : 'scroll', 
-                visibility  : 'hidden'}
-            ).appendTo('body'),
-            widthWithScroll = $('<div>').css({
-                width: '100%'
-            }).appendTo($container).outerWidth();
-
-        $container.remove();
-        return tmpWidth - widthWithScroll;
+                if (i >= that.options.rightFixedNumber) {
+                    return false;
+                }
+                headerWidth += $("#"  + that.options.id).find("tr:first-child>th").eq(index).width();
+            });
+            this.$rightfixedBody.width(headerWidth - 1).show();
+        }
     };
 
     BootstrapTable.prototype.fitBodyColumns = function () {
-        var that            = this,
-            borderHeight    = (parseInt(this.$el.css('border-bottom-width')) + parseInt(this.$el.css('border-top-width'))), // Add. Aleksej
-            top             = this.$fixedHeader.outerHeight() + borderHeight, // Fix. Aleksej "-2" mit "+ borderHeight" ersetzt
-            // the fixed height should reduce the scorll-x height
-            height          = this.$tableBody.height() - this.calcScrollBarSize(); // Fix. Aleksej "-14" mit "- this.calcScrollBarSize()" ersetzt
-            
-        if (!this.$body.find('> tr[data-index]').length) {
-            this.$fixedBody.hide();
-            return;
+        var that = this,
+            top = -(parseInt(this.$el.css('margin-top'))),
+            height = this.$tableBody.height();
+
+        if (that.options.fixedColumns) {
+            if (!this.$body.find('> tr[data-index]').length) {
+                this.$fixedBody.hide();
+                return;
+            }
+            //
+            if (!this.options.height) {
+                top = this.$fixedHeader.height()- 1;
+                height = height - top;
+            }
+
+            this.$fixedBody.css({
+                width: this.$fixedHeader.width(),
+                height: height,
+                top: top + 1
+            }).show();
+            // //
+            // var bsHeight = $("#" + that.options.id).find("tr").eq(1).height();
+            // var fixedHeight = $("#" + that.options.id).parent().prev().find("tr").eq(1).height();
+            // var resizeHeight = bsHeight > fixedHeight ? bsHeight: fixedHeight;
+            // this.$body.find('> tr').each(function (i) {
+            //
+            //     that.$fixedBody.find('tr:eq(' + i + ')').height(i == 0 ? resizeHeight - 1 : resizeHeight);
+            //     //$("#" + that.options.id).find('tbody>tr:eq(' + i + ')').height(resizeHeight);
+            //     // var thattds = this;
+            //     // that.$fixedBody.find('tr:eq(' + i + ')').find('td').each(function (j) {
+            //     //     $(this).width($($(thattds).find('td')[j]).width() + 1);
+            //     // });
+            // });
+
+            this.$body.find('> tr').each(function (i) {
+                that.$fixedBody.find('tr:eq(' + i + ')').height($(this).height());
+
+                // var $tr = $(this), //当前行
+                //     $tds = $tr.clone().find('td'); //列
+                // for (var i = 0; i < that.options.rightFixedNumber; i++) {
+                //     var indexTd = $tds.length - that.options.rightFixedNumber + i;
+                //     var oldTd = $tds.eq(indexTd);
+                //     oldTd.css();
+                // }
+            });
+
+            // $("#" + that.options.id).on("check.bs.table uncheck.bs.table", function (e, rows, $element) {
+            //     var index= $element.data('index');
+            //     $(this).find('.bs-checkbox').find('input[data-index="' + index + '"]').prop("checked", true);
+            //     var selectFixedItem = $('.left-fixed-body-columns input[name=btSelectItem]');
+            //     var checkAll = selectFixedItem.filter(':enabled').length &&
+            //         selectFixedItem.filter(':enabled').length ===
+            //         selectFixedItem.filter(':enabled').filter(':checked').length;
+            //     $(".left-fixed-table-columns input[name=btSelectAll]").prop('checked', checkAll);
+            //     $('.fixed-table-body input[name=btSelectItem]').closest('tr').removeClass('selected');
+            // });
+            //
+            // $("#" + that.options.id).off('click', '.fixed-table-body').on('click', '.th-inner', function (event) {
+            //     $.each(that.$fixedHeader.find('th'), function (i, th) {
+            //         $(th).find('.sortable').removeClass('desc asc').addClass('both');
+            //     });
+            // });
+            //
+            // // events
+            // this.$fixedHeader.off('click', '.th-inner').on('click', '.th-inner', function (event) {
+            //     var target = $(this);
+            //     var $this = event.type === "keypress" ? $(event.currentTarget) : $(event.currentTarget).parent(), $this_ = that.$header.find('th').eq($this.index());
+            //
+            //     var sortOrder = "";
+            //     if (table.options.sortName === $this.data('field')) {
+            //         sortOrder = table.options.sortOrder === 'asc' ? 'desc' : 'asc';
+            //     } else {
+            //         sortOrder = $this.data('order') === 'asc' ? 'desc' : 'asc';
+            //     }
+            //     table.options.sortOrder = sortOrder;
+            //     var sortName = $this.data('sortName') ? $this.data('sortName') : $this.data('field');
+            //     if (target.parent().data().sortable) {
+            //         $.each(that.$fixedHeader.find('th'), function (i, th) {
+            //             $(th).find('.sortable').removeClass('desc asc').addClass(($(th).data('field') === sortName || $(th).data('sortName') === sortName) ? sortOrder : 'both');
+            //         });
+            //     }
+            // });
+            //
+            // this.$tableBody.on('scroll', function () {
+            //     that.$fixedBody.find('table').css('top', -$(this).scrollTop());
+            // });
+            // this.$body.find('> tr[data-index]').off('hover').hover(function () {
+            //     var index = $(this).data('index');
+            //     that.$fixedBody.find('tr[data-index="' + index + '"]').addClass('hover');
+            // }, function () {
+            //     var index = $(this).data('index');
+            //     that.$fixedBody.find('tr[data-index="' + index + '"]').removeClass('hover');
+            // });
+            // this.$fixedBody.find('tr[data-index]').off('hover').hover(function () {
+            //     var index = $(this).data('index');
+            //     that.$body.find('tr[data-index="' + index + '"]').addClass('hover');
+            // }, function () {
+            //     var index = $(this).data('index');
+            //     that.$body.find('> tr[data-index="' + index + '"]').removeClass('hover');
+            // });
         }
+        if (that.options.rightFixedColumns) {
+            if (!this.$body.find('> tr[data-index]').length) {
+                this.$rightfixedBody.hide();
+                return;
+            }
 
-        if (!this.options.height) {
-            top = this.$fixedHeader.height();
-            height = height - top;
+            this.$body.find('> tr').each(function (i) {
+                that.$rightfixedBody.find('tbody tr:eq(' + i + ')').height($(this).height());
+            });
+
+            //// events
+            this.$tableBody.on('scroll', function () {
+                that.$rightfixedBody.find('table').css('top', -$(this).scrollTop());
+            });
+            this.$body.find('> tr[data-index]').off('hover').hover(function () {
+                var index = $(this).data('index');
+                that.$rightfixedBody.find('tr[data-index="' + index + '"]').addClass('hover');
+            }, function () {
+                var index = $(this).data('index');
+                that.$rightfixedBody.find('tr[data-index="' + index + '"]').removeClass('hover');
+            });
+            this.$rightfixedBody.find('tr[data-index]').off('hover').hover(function () {
+                var index = $(this).data('index');
+                that.$body.find('tr[data-index="' + index + '"]').addClass('hover');
+            }, function () {
+                var index = $(this).data('index');
+                that.$body.find('> tr[data-index="' + index + '"]').removeClass('hover');
+            });
         }
-
-        this.$fixedBody.css({
-            width: this.$fixedHeader.width(),
-            height: height,
-            top: top
-        }).show();
-
-        this.$body.find('> tr').each(function (i) {
-            that.$fixedBody.find('tr:eq(' + i + ')').height($(this).height() - 1);
-        });
-
-        // events
-        this.$tableBody.on('scroll', function () {
-            that.$fixedBody.find('table').css('top', -$(this).scrollTop());
-        });
-        this.$body.find('> tr[data-index]').off('hover').hover(function () {
-            var index = $(this).data('index');
-            that.$fixedBody.find('tr[data-index="' + index + '"]').addClass('hover');
-        }, function () {
-            var index = $(this).data('index');
-            that.$fixedBody.find('tr[data-index="' + index + '"]').removeClass('hover');
-        });
-        this.$fixedBody.find('tr[data-index]').off('hover').hover(function () {
-            var index = $(this).data('index');
-            that.$body.find('tr[data-index="' + index + '"]').addClass('hover');
-        }, function () {
-            var index = $(this).data('index');
-            that.$body.find('> tr[data-index="' + index + '"]').removeClass('hover');
-        });
-
-        // fix td width bug
-        var $first_tr = that.$body.find('tr:eq(0)');
-        that.$fixedBody.find('tr:eq(0)').find("td").each(function(index) {
-            $(this).width($first_tr.find("td:eq("+index+")").width())
-        });
+        /* 页面大小变动适配*/
+        var w = 0;
+        for(var i=0; i<that.options.columns[0].length;i++ ){
+            if(that.options.columns[0][i].width == undefined || that.options.columns[0][i].width == null || that.options.columns[0][i].width.length == 0){
+                w += 120;
+            }else{
+                w += that.options.columns[0][i].width;
+            }
+        }
+        if($("#"  + that.options.id).outerWidth() < w){
+            $("#"  + that.options.id).width(w+"px");
+        }
+        if($("#"  + that.options.id).parent(".fixed-table-body").outerWidth() > w){
+            $("#"  + that.options.id).width($("#"  + that.options.id).parent(".fixed-table-body").outerWidth()+"px");
+        }
     };
 
 })(jQuery);
